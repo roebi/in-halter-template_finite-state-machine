@@ -1,0 +1,29 @@
+
+# Avoid ignoring git ignore File
+!.gitignore
+
+# Ignore Gradle
+.gradle
+# Ignore Gradle Build Path
+build/
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+
+# Ignore IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea
+
+# Ignore Eclipse Classpath
+.classpath
+# Ignore Eclipse Project
+.project
+# Ignore Eclipse Build Path
+bin/
+
+# Ignore Class Files
+*.class
