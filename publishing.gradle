@@ -1,0 +1,85 @@
+apply plugin: "maven-publish"
+apply plugin: "com.jfrog.bintray"
+
+publishing {
+  publications {
+    // correlates to bintray.publications value
+    mavenJavaApi(MavenPublication) {
+      logger.info("apiJar.appendix: " + apiJar.appendix)
+      groupId = theBaseGroup + "-" + apiJar.appendix
+      artifactId = theBaseName + "-" + apiJar.appendix
+      version = theAPIVersion
+
+      artifact apiJar
+
+      artifact apijavaDocJar {
+        classifier "doc"
+      }
+
+      artifact apisourceJar {
+        classifier "sources"
+      }
+    }
+    // correlates to bintray.publications value
+    mavenJavaImpl(MavenPublication) {
+      logger.info("jar.appendix: " + jar.appendix)
+      groupId = theBaseGroup + "-" + jar.appendix
+      artifactId = theBaseName + "-" + jar.appendix
+      version = theImplVersion
+
+      from components.java
+
+      artifact javaDocJar {
+        classifier "doc"
+      }
+
+      artifact sourceJar {
+        classifier "sources"
+      }
+    }
+  }
+}
+
+bintray {
+  user = bintrayUsername
+  key = bintrayApiKey
+  // configurations = [ "archives" ]
+  // correlates to publishing.publications value
+  publications = ["mavenJavaApi", "mavenJavaImpl"] // when uploading maven based publication files
+  dryRun = true // true if run this as dry-run, without deploying
+  publish = true // true if version should be auto published after an upload
+  // Package configuration.
+  // The plugin will use the repo and name properties to check if the package already exists.
+  // In that case, there's no need to configure the other package properties (like userOrg, desc, etc).
+  pkg {
+    repo = "maven" // theBaseGroup
+    name = theBaseName
+    desc = theDescription
+    websiteUrl = "https://github.com/roebi/in-halter-template_finite-state-machine"
+    issueTrackerUrl = "https://github.com/roebi/in-halter-template_finite-state-machine/issues"
+    vcsUrl = "https://github.com/roebi/in-halter-template_finite-state-machine.git"
+    licenses = ["Apache-2.0"]
+    labels = ["scala", "java", "akka", "finite-state-machine", "FSM", "template"]
+    publicDownloadNumbers = true
+    // Optional version descriptor
+    version {
+      name = "1.0-Final" // Bintray logical version name
+      desc = "First Release" // Optional - Version-specific description
+      // released  = // Optional - Date of the version release. 2 possible values: date in the format of 'yyyy-MM-dd'T'HH:mm:ss.SSSZZ' OR a java.util.Date instance
+      vcsTag = "1.0"
+      // attributes = ["gradle-plugin": "com.use.less:com.use.less.gradle:gradle-useless-plugin"] // Optional version-level attributes
+      // Optional configuration for GPG signing
+      // gpg {
+      //   sign = true // Determines whether to GPG sign the files. The default is false
+      //   passphrase = "passphrase" // Optional. The passphrase for GPG signing
+      // }
+      // Optional configuration for Maven Central sync of the version
+      // mavenCentralSync {
+      //   sync = true // Optional (true by default). Determines whether to sync the version to Maven Central.
+      //   user = "userToken" // OSS user token
+      //   password = "paasword" // OSS user password
+      //  close = "1" // Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+      // }
+    }
+  }
+}

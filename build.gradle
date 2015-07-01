@@ -1,0 +1,147 @@
+// Gradle >= 2.1
+plugins {
+    id "java"
+    id "scala"
+    id "idea"
+    id "eclipse"
+    // Helper for deploy to bintray
+    id "com.jfrog.bintray" version "1.1"
+    // Cobertura test coverage - A code coverage utility for Java.
+    id "net.saliman.cobertura" version "2.2.8"
+}
+
+apply from: "publishing.gradle"
+apply from: "cobertura.gradle"
+apply from: "jacoco.gradle"
+apply from: "sonarrunner.gradle"
+
+def javaVersion = JavaVersion.VERSION_1_8
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion // defaults to sourceCompatibility
+
+repositories {
+  mavenCentral()
+  jcenter()
+}
+
+dependencies {
+  // runtime
+  compile "com.typesafe.akka:akka-actor_2.11:${akkaActor2_11Version}"
+  compile "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+
+  // some for test
+  testCompile "com.typesafe.akka:akka-testkit_2.11:${akkaTestkit2_11Version}"
+  testCompile "org.easytesting:fest-assert-core:${festAssertCoreVersion}"
+  testCompile("org.easytesting:fest-assert:${festAssertVersion}") {
+    exclude group: "org.easytesting", module: "fest-util"
+  }
+  testCompile "org.hamcrest:hamcrest-core:${hamcrestCoreVersion}"
+  testCompile("junit:junit:${junitVersion}") {
+    //excluding particular transitive dependency
+    exclude group: "org.hamcrest", module: "hamcrest-core"
+  }
+  testCompile("org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}") {
+    //excluding particular transitive dependency
+    exclude group: "org.hamcrest", module: "hamcrest-core"
+  }
+  testCompile("org.spockframework:spock-core:${spockCoreGroovyVersion}") {
+    //excluding particular transitive dependency
+    exclude group: "org.hamcrest", module: "hamcrest-core"
+    exclude group: "junit", module: "junit"
+    exclude group: "org.codehaus.groovy", module: "groovy-all"
+  }
+  // cobertura
+  // cobertura "org.slf4j:slf4j-simple:${coberturaSlf4jSimpleVersion}"
+}
+
+compileJava {
+  options.fork = true
+}
+
+ext.sharedManifest = manifest {
+  attributes("Implementation-Title": theDescription,
+             "API-Version": theAPIVersion,
+             "Implementation-Version": theImplVersion,
+             // "Class-Path": configurations.compile.collect { it.getName() }.join(' '))
+             "Built-By": System.getProperty('user.name'),
+             "Built-Date": new Date(),
+             "Built-JDK": System.getProperty('java.version') )
+}
+
+jar {
+  appendix = theImplAppendix
+  exclude('in/halter/template/fsm/api/**')
+  manifest = project.manifest {
+    from sharedManifest
+  }
+}
+
+task apiJar(type: Jar, dependsOn: jar) {
+  appendix = theApiAppendix
+  from files(sourceSets.main.output.classesDir)
+  exclude('in/halter/template/fsm/impl/**')
+  manifest = project.manifest {
+    from sharedManifest
+  }
+}
+
+task sourceJar(type: Jar, dependsOn: jar) {
+  appendix = theImplAppendix
+  from sourceSets.main.allJava
+  exclude('in/halter/template/fsm/api/**')
+  manifest = project.manifest {
+    from sharedManifest
+  }
+}
+
+task apisourceJar(type: Jar, dependsOn: jar) {
+  appendix = theApiAppendix
+  classifier = "sources"
+  from sourceSets.main.allJava
+  exclude('in/halter/template/fsm/impl/**')
+  manifest = project.manifest {
+    from sharedManifest
+  }
+}
+
+javadoc {
+  title = theDescription
+  options {
+    links("http://docs.oracle.com/javase/8/docs/api/")
+    // links("http://www.halter.in/fsm-api/docs/current/javadoc/")
+    // links("http://www.halter.in/fsm-impl/docs/current/javadoc/")
+  }
+}
+
+task javaDocJar(type: Jar, dependsOn: javadoc) {
+  appendix = theImplAppendix
+  classifier = "doc"
+  from javadoc.destinationDir
+  exclude('in/halter/template/fsm/api/**') 
+  manifest = project.manifest {
+    from sharedManifest
+  }
+}
+
+task apijavaDocJar(type: Jar, dependsOn: javadoc) {
+  appendix = theApiAppendix
+  classifier = "doc"
+  from javadoc.destinationDir
+  exclude('in/halter/template/fsm/impl/**') 
+  manifest = project.manifest {
+    from sharedManifest
+  }
+}
+
+test {
+  useJUnit {
+    // includeCategories 'org.gradle.junit.CategoryA'
+  }
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
+}
+
+artifacts {
+  archives jar, sourceJar, javaDocJar, apiJar, apisourceJar, apijavaDocJar
+}
